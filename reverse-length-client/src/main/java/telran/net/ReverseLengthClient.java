@@ -20,14 +20,14 @@ public class ReverseLengthClient {
         }
     }
 
-    public String sendRequest(String type, String input) {
+    public String sendAndReceive(String string) {
         try {
-            writer.println(type);
-            writer.println(input);
+            writer.println(string);
             return reader.readLine();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
     }
 
     public void close() {

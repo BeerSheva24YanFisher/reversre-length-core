@@ -1,53 +1,50 @@
 package telran.net;
+import java.util.HashSet;
+import java.util.List;
+
+import org.json.JSONObject;
 
 import telran.view.InputOutput;
 import telran.view.Item;
 import telran.view.Menu;
 import telran.view.StandardInputOutput;
-
 public class MainClient {
     static ReverseLengthClient client;
 
     public static void main(String[] args) {
-        Item[] items = {
-            Item.of("Start session", MainClient::startSession),
-            Item.of("Exit", MainClient::exit, true)
-        };
-        Menu menu = new Menu("Reverse-Length Application", items);
-        menu.perform(new StandardInputOutput());
+      Item[] items = {
+            Item.of("start session", MainClient::startSession),
+            Item.of("exit", MainClient::exit, true)
+      };
+      Menu menu = new Menu("Echo Application", items);
+      menu.perform(new StandardInputOutput());
     }
-
     static void startSession(InputOutput io) {
         String host = io.readString("Enter hostname");
-        int port = io.readNumberRange("Enter port", "Invalid port", 3000, 50000).intValue();
-
-        if (client != null) {
+        int port = io.readNumberRange("Enter port", "Wrong port", 3000, 50000).intValue();
+        if(client != null) {
             client.close();
         }
         client = new ReverseLengthClient(host, port);
-        Menu sessionMenu = new Menu("Request Menu",
-            Item.of("Reverse String", MainClient::reverseString),
-            Item.of("Get String Length", MainClient::getStringLength),
-            Item.of("Exit Session", MainClient::exit)
-        );
-        sessionMenu.perform(io);
-    }
+        Menu menu = new Menu("Run Session",
+         Item.of("session", MainClient::sessionProcessing),
+          Item.ofExit());
+         menu.perform(io);
 
-    static void reverseString(InputOutput io) {
-        String input = io.readString("Enter a string:");
-        String response = client.sendRequest("1", input);
-        io.writeLine("Reversed String: " + response);
     }
-    static void getStringLength(InputOutput io) {
-        String input = io.readString("Enter a string:");
-        String response = client.sendRequest("2", input);
-        io.writeLine("String Length: " + response);
+    static void sessionProcessing(InputOutput io) {
+       HashSet<String> types = new HashSet<>(List.of("reverse", "length"));
+        String type = io.readStringOptions("Enter operation type " + types, "Wrong type", types);
+        String string = io.readString("Enter any string");
+        JSONObject jsonObj = new JSONObject();
+        jsonObj.put("type",type);
+        jsonObj.put("string", string);
+        String response = client.sendAndReceive(jsonObj.toString());
+        io.writeLine(response);
     }
-
     static void exit(InputOutput io) {
-        if (client != null) {
+        if(client != null) {
             client.close();
         }
-        System.exit(0);
     }
 }
